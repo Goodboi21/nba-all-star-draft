@@ -102,7 +102,7 @@ function getTeamStats(teamArr) {
 function App() {
   // --- DRAFT PHASE STATE ---
   const [gameStarted, setGameStarted] = useState(false);
-  const [musicPlaying, setMusicPlaying] = useState(true);
+  const [musicPlaying, setMusicPlaying] = useState(false);
   const [captainPhase, setCaptainPhase] = useState(false);
   const [userCaptain, setUserCaptain] = useState(null);
   const [cpuCaptain, setCpuCaptain] = useState(null);
@@ -128,6 +128,7 @@ function App() {
   const [mvp, setMVP] = useState(null);
 
   const audioRef = useRef();
+
   // --- Music Controls ---
   const handlePause = () => {
     setMusicPlaying(false);
@@ -135,7 +136,7 @@ function App() {
   };
   const handleResume = () => {
     setMusicPlaying(true);
-    audioRef.current && audioRef.current.play();
+    audioRef.current && audioRef.current.play().catch(() => {});
   };
   useEffect(() => {
     if (musicPlaying && audioRef.current) {
@@ -147,6 +148,10 @@ function App() {
   const handleStartGame = () => {
     setGameStarted(true);
     setCaptainPhase(true);
+    setMusicPlaying(true);
+    if (audioRef.current) {
+      audioRef.current.play().catch(() => {});
+    }
   };
 
   // --- Captain Selection ---
@@ -419,160 +424,22 @@ function App() {
   }, [showFinal]);
 
   // --- MAIN RENDER ---
-  if (simulationPhase) {
-    const totalUser = userScores.reduce((a, b) => a + b, 0);
-    const totalCPU = cpuScores.reduce((a, b) => a + b, 0);
-    return (
-      <div style={{ textAlign: "center", padding: 20 }}>
-        <audio ref={audioRef} src="/background.mp3" loop autoPlay style={{ display: "none" }} />
-        <div style={{ marginBottom: 15 }}>
-          <button onClick={handlePause} disabled={!musicPlaying} style={{ marginRight: 8 }}>
-            Pause Music
-          </button>
-          <button onClick={handleResume} disabled={musicPlaying}>
-            Resume Music
-          </button>
-        </div>
-        <h1 style={{ marginBottom: 10 }}>All-Star Game Simulation</h1>
-        <div>
-          <h2>{half === 1 ? "First Half" : "Second Half"}</h2>
-          <div style={{ margin: "18px 0", fontSize: 18 }}>
-            {userStrategy === null ? (
-              <>
-                <div style={{ marginBottom: 10, color: "#286e43", fontWeight: "bold" }}>
-                  Choose your strategy for {half === 1 ? "the first half" : "the second half"}
-                </div>
-                {STRATEGIES.map(s => (
-                  <button
-                    key={s.key}
-                    style={{ fontSize: 18, margin: 8, padding: "10px 28px" }}
-                    onClick={() => handleStrategyPick(s.key)}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </>
-            ) : (
-              <>
-                <div>
-                  <b>Your Strategy:</b> {STRATEGIES.find(s => s.key === userStrategy).label}
-                  <br />
-                  <b>CPU Strategy:</b> {cpuStrategy ? STRATEGIES.find(s => s.key === cpuStrategy).label : "Picking..."}
-                </div>
-              </>
-            )}
-          </div>
-          <div>
-            <h3>Scoreboard</h3>
-            <table style={{ margin: "0 auto", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: 6 }}> </th>
-                  <th style={{ padding: 6 }}>Q1</th>
-                  <th style={{ padding: 6 }}>Q2</th>
-                  <th style={{ padding: 6 }}>Q3</th>
-                  <th style={{ padding: 6 }}>Q4</th>
-                  <th style={{ padding: 6 }}>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td style={{ fontWeight: "bold", padding: 6 }}>You</td>
-                  <td style={{ padding: 6 }}>{userScores[0]}</td>
-                  <td style={{ padding: 6 }}>{userScores[1]}</td>
-                  <td style={{ padding: 6 }}>{userScores[2]}</td>
-                  <td style={{ padding: 6 }}>{userScores[3]}</td>
-                  <td style={{ fontWeight: "bold", padding: 6 }}>{totalUser}</td>
-                </tr>
-                <tr>
-                  <td style={{ fontWeight: "bold", padding: 6 }}>CPU</td>
-                  <td style={{ padding: 6 }}>{cpuScores[0]}</td>
-                  <td style={{ padding: 6 }}>{cpuScores[1]}</td>
-                  <td style={{ padding: 6 }}>{cpuScores[2]}</td>
-                  <td style={{ padding: 6 }}>{cpuScores[3]}</td>
-                  <td style={{ fontWeight: "bold", padding: 6 }}>{totalCPU}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          {(half === 1 && userStrategy === null && userScores[0] + userScores[1] > 0) && (
-            <div style={{ marginTop: 14, color: "#4069c9", fontWeight: "bold" }}>
-              Halftime! It's time to adjust your tactics for the second half.
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-  // Show final result with MVP and improved message
-  if (showFinal) {
-    const totalUser = userScores.reduce((a, b) => a + b, 0);
-    const totalCPU = cpuScores.reduce((a, b) => a + b, 0);
-    const userWon = totalUser > totalCPU;
-    return (
-      <div style={{ textAlign: "center", padding: 20 }}>
-        <audio ref={audioRef} src="/background.mp3" loop autoPlay style={{ display: "none" }} />
-        <div style={{ marginBottom: 15 }}>
-          <button onClick={handlePause} disabled={!musicPlaying} style={{ marginRight: 8 }}>
-            Pause Music
-          </button>
-          <button onClick={handleResume} disabled={musicPlaying}>
-            Resume Music
-          </button>
-        </div>
-        <h1>All-Star Game Final Score</h1>
-        <div>
-          <h2>Final Score</h2>
-          <div style={{ fontSize: 22, margin: "32px 0" }}>
-            <span style={{ fontWeight: "bold", color: "#0b2047" }}>You</span>: {totalUser} <br />
-            <span style={{ fontWeight: "bold", color: "#a43e1e" }}>CPU</span>: {totalCPU}
-          </div>
-          <div style={{ fontSize: 20, color: userWon ? "#1d9c4b" : "#a43e1e", margin: "24px 0" }}>
-            {userWon
-              ? "Easy Money. Let's go"
-              : "Tough Luck Mate. It's the All Star tho"}
-          </div>
-          {mvp && (
-            <div style={{ margin: "30px 0", fontSize: 20 }}>
-              <b>All-Star Game MVP:</b>
-              <div style={{ marginTop: 12 }}>
-                <span style={{ color: mvp.mvpTeam === "You" ? "#0b2047" : "#a43e1e", fontWeight: "bold" }}>
-                  {mvp.name}
-                </span>
-                <span style={{ color: "#666" }}>
-                  {" "}({Math.round(mvp.impact)} impact score)
-                </span>
-                <br />
-                <span style={{
-                  fontSize: 15,
-                  color: mvp.mvpTeam === "You" ? "#4069c9" : "#a43e1e"
-                }}>
-                  MVP from {mvp.mvpTeam === "You" ? "your team!" : "CPU team!"}
-                </span>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={() => window.location.reload()}
-            style={{ marginTop: 24, fontSize: 18, padding: "8px 32px" }}
-          >
-            Restart Game
-          </button>
-        </div>
-      </div>
-    );
-  }
-  // --- DRAFT PHASE UI ---
   return (
-    <div style={{ textAlign: "center", padding: 20 }}>
-      <audio
-        ref={audioRef}
-        src="/background.mp3"
-        loop
-        autoPlay
-        style={{ display: "none" }}
-      />
-      <div style={{ marginBottom: 15 }}>
+    <div
+      style={{
+        position: "relative",
+        textAlign: "center",
+        padding: 20,
+        minHeight: "100vh",
+        width: "100vw",
+        backgroundImage: "url('/StephLeBron.jpeg')", // <-- Use your exact file name here!
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat"
+      }}
+    >
+      {/* Music controls and audio */}
+      <div style={{ position: "absolute", top: 10, left: 10, zIndex: 10 }}>
         <button onClick={handlePause} disabled={!musicPlaying} style={{ marginRight: 8 }}>
           Pause Music
         </button>
@@ -580,238 +447,358 @@ function App() {
           Resume Music
         </button>
       </div>
-      <h1>NBA All-Star Draft Game</h1>
-      {!gameStarted ? (
-        <button
-          style={{ fontSize: 24, padding: "12px 36px" }}
-          onClick={handleStartGame}
-        >
-          Start Game
-        </button>
-      ) : captainPhase ? (
-        <div>
-          <h2>Select Your Captain</h2>
-          <div style={{ display: "flex", justifyContent: "center", gap: 40 }}>
-            {CAPTAINS.map((cap) => (
-              <div
-                key={cap.name}
-                style={{
-                  cursor: "pointer",
-                  border: "2px solid #444",
-                  borderRadius: 10,
-                  padding: 10,
-                  width: 200,
-                  background: "#eee",
-                  transition: "border 0.2s",
-                }}
-                onClick={() => handlePickCaptain(cap)}
-              >
-                <img
-                  src={cap.src}
-                  alt={cap.display}
-                  width={180}
-                  style={{ borderRadius: 8 }}
-                />
-                <br />
-                <b>{cap.display}</b>
+      <audio ref={audioRef} src="/background.mp3" loop />
+      <div style={{ position: "relative", zIndex: 1 }}>
+        {simulationPhase ? (
+          <div style={{ textAlign: "center", padding: 20 }}>
+            <h1 style={{ marginBottom: 10 }}>All-Star Game Simulation</h1>
+            <div>
+              <h2>{half === 1 ? "First Half" : "Second Half"}</h2>
+              <div style={{ margin: "18px 0", fontSize: 18 }}>
+                {userStrategy === null ? (
+                  <>
+                    <div style={{ marginBottom: 10, color: "#286e43", fontWeight: "bold" }}>
+                      Choose your strategy for {half === 1 ? "the first half" : "the second half"}
+                    </div>
+                    {STRATEGIES.map(s => (
+                      <button
+                        key={s.key}
+                        style={{ fontSize: 18, margin: 8, padding: "10px 28px" }}
+                        onClick={() => handleStrategyPick(s.key)}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <b>Your Strategy:</b> {STRATEGIES.find(s => s.key === userStrategy).label}
+                      <br />
+                      <b>CPU Strategy:</b> {cpuStrategy ? STRATEGIES.find(s => s.key === cpuStrategy).label : "Picking..."}
+                    </div>
+                  </>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
-      ) : showGetReadyStarters ? (
-        <div>
-          <h2>Captains Locked In!</h2>
-          <div style={{ display: "flex", justifyContent: "center", gap: 40 }}>
-            <div>
-              <h3>Your Captain</h3>
-              {userCaptain && (
-                <div>
-                  <img src={userCaptain.src} alt={userCaptain.display} width={120} style={{ borderRadius: 8 }} /><br />
-                  <b>{userCaptain.display}</b>
+              <div>
+                <h3>Scoreboard</h3>
+                <table style={{ margin: "0 auto", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: 6 }}> </th>
+                      <th style={{ padding: 6 }}>Q1</th>
+                      <th style={{ padding: 6 }}>Q2</th>
+                      <th style={{ padding: 6 }}>Q3</th>
+                      <th style={{ padding: 6 }}>Q4</th>
+                      <th style={{ padding: 6 }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ fontWeight: "bold", padding: 6 }}>You</td>
+                      <td style={{ padding: 6 }}>{userScores[0]}</td>
+                      <td style={{ padding: 6 }}>{userScores[1]}</td>
+                      <td style={{ padding: 6 }}>{userScores[2]}</td>
+                      <td style={{ padding: 6 }}>{userScores[3]}</td>
+                      <td style={{ fontWeight: "bold", padding: 6 }}>{userScores.reduce((a, b) => a + b, 0)}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold", padding: 6 }}>CPU</td>
+                      <td style={{ padding: 6 }}>{cpuScores[0]}</td>
+                      <td style={{ padding: 6 }}>{cpuScores[1]}</td>
+                      <td style={{ padding: 6 }}>{cpuScores[2]}</td>
+                      <td style={{ padding: 6 }}>{cpuScores[3]}</td>
+                      <td style={{ fontWeight: "bold", padding: 6 }}>{cpuScores.reduce((a, b) => a + b, 0)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              {(half === 1 && userStrategy === null && userScores[0] + userScores[1] > 0) && (
+                <div style={{ marginTop: 14, color: "#4069c9", fontWeight: "bold" }}>
+                  Halftime! It's time to adjust your tactics for the second half.
                 </div>
               )}
             </div>
+          </div>
+        ) : showFinal ? (
+          <div style={{ textAlign: "center", padding: 20 }}>
+            <h1>All-Star Game Final Score</h1>
             <div>
-              <h3>CPU Captain</h3>
-              {cpuCaptain && (
-                <div>
-                  <img src={cpuCaptain.src} alt={cpuCaptain.display} width={120} style={{ borderRadius: 8 }} /><br />
-                  <b>{cpuCaptain.display}</b>
+              <h2>Final Score</h2>
+              <div style={{ fontSize: 22, margin: "32px 0" }}>
+                <span style={{ fontWeight: "bold", color: "#0b2047" }}>You</span>: {userScores.reduce((a, b) => a + b, 0)} <br />
+                <span style={{ fontWeight: "bold", color: "#a43e1e" }}>CPU</span>: {cpuScores.reduce((a, b) => a + b, 0)}
+              </div>
+              <div style={{ fontSize: 20, color: userScores.reduce((a, b) => a + b, 0) > cpuScores.reduce((a, b) => a + b, 0) ? "#1d9c4b" : "#a43e1e", margin: "24px 0" }}>
+                {userScores.reduce((a, b) => a + b, 0) > cpuScores.reduce((a, b) => a + b, 0)
+                  ? "Easy Money. Let's go"
+                  : "Tough Luck Mate. It's the All Star tho"}
+              </div>
+              {mvp && (
+                <div style={{ margin: "30px 0", fontSize: 20 }}>
+                  <b>All-Star Game MVP:</b>
+                  <div style={{ marginTop: 12 }}>
+                    <span style={{ color: mvp.mvpTeam === "You" ? "#0b2047" : "#a43e1e", fontWeight: "bold" }}>
+                      {mvp.name}
+                    </span>
+                    <span style={{ color: "#666" }}>
+                      {" "}({Math.round(mvp.impact)} impact score)
+                    </span>
+                    <br />
+                    <span style={{
+                      fontSize: 15,
+                      color: mvp.mvpTeam === "You" ? "#4069c9" : "#a43e1e"
+                    }}>
+                      MVP from {mvp.mvpTeam === "You" ? "your team!" : "CPU team!"}
+                    </span>
+                  </div>
                 </div>
               )}
+              <button
+                onClick={() => window.location.reload()}
+                style={{ marginTop: 24, fontSize: 18, padding: "8px 32px" }}
+              >
+                Restart Game
+              </button>
             </div>
           </div>
-          <div style={{ marginTop: 32 }}>
-            <div style={{ fontWeight: "bold", fontSize: 18, background: "#4069c9", color: "#fff", display: "inline-block", padding: "4px 8px", borderRadius: 3 }}>
-              Get ready to draft the Starters!
-            </div>
-            <br />
-            <button style={{ marginTop: 24, fontSize: 18, padding: "10px 32px" }} onClick={beginStartersDraft}>
-              Start Starters Draft
-            </button>
-          </div>
-        </div>
-      ) : startersPhase ? (
-        <div>
-          <h2>Draft Starters</h2>
-          <div style={{ marginBottom: 12 }}>
-            <b>
-              {currentTurn === "user"
-                ? "Your Turn: Pick a Starter"
-                : "CPU is drafting..."}
-            </b>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "18px",
-              justifyContent: "center",
-              marginBottom: 18,
-            }}
-          >
-            {startersPool.map(player => {
-              const picked =
-                userTeam.some(t => t.name === player.name) ||
-                cpuTeam.some(t => t.name === player.name);
-              return (
-                <div
-                  key={player.name}
-                  style={{
-                    width: 160,
-                    textAlign: "center",
-                    border: picked ? "2px solid #bbb" : "2px solid #aaa",
-                    borderRadius: 10,
-                    padding: 10,
-                    background: picked ? "#f3f3f3" : "#fafafa",
-                    cursor:
-                      !picked && currentTurn === "user"
-                        ? "pointer"
-                        : "not-allowed",
-                    opacity: picked
-                      ? 0.5
-                      : currentTurn === "user"
-                      ? 1
-                      : 0.7,
-                  }}
-                  onClick={() =>
-                    !picked && currentTurn === "user"
-                      ? handleDraftStarter(player)
-                      : undefined
-                  }
-                >
-                  <img
-                    src={player.src}
-                    alt={player.name}
-                    width="120"
-                    style={{ borderRadius: 8 }}
-                  />
-                  <div style={{ marginTop: 8, fontWeight: "bold" }}>
-                    {player.name}
+        ) : (
+          <>
+            <h1 style={{ color: "#fff", textShadow: "0 2px 8px #000" }}>NBA All-Star Draft Game</h1>
+            {!gameStarted ? (
+              <button
+                style={{ fontSize: 24, padding: "12px 36px" }}
+                onClick={handleStartGame}
+              >
+                Start Game
+              </button>
+            ) : captainPhase ? (
+              <div>
+                <h2 style={{ color: "#fff" }}>Select Your Captain</h2>
+                <div style={{ display: "flex", justifyContent: "center", gap: 40 }}>
+                  {CAPTAINS.map((cap) => (
+                    <div
+                      key={cap.name}
+                      style={{
+                        cursor: "pointer",
+                        border: "2px solid #444",
+                        borderRadius: 10,
+                        padding: 10,
+                        width: 200,
+                        background: "#eee",
+                        transition: "border 0.2s",
+                      }}
+                      onClick={() => handlePickCaptain(cap)}
+                    >
+                      <img
+                        src={cap.src}
+                        alt={cap.display}
+                        width={180}
+                        style={{ borderRadius: 8 }}
+                      />
+                      <br />
+                      <b>{cap.display}</b>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : showGetReadyStarters ? (
+              <div>
+                <h2 style={{ color: "#fff" }}>Captains Locked In!</h2>
+                <div style={{ display: "flex", justifyContent: "center", gap: 40 }}>
+                  <div>
+                    <h3 style={{ color: "#fff" }}>Your Captain</h3>
+                    {userCaptain && (
+                      <div>
+                        <img src={userCaptain.src} alt={userCaptain.display} width={120} style={{ borderRadius: 8 }} /><br />
+                        <b style={{ color: "#fff" }}>{userCaptain.display}</b>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 style={{ color: "#fff" }}>CPU Captain</h3>
+                    {cpuCaptain && (
+                      <div>
+                        <img src={cpuCaptain.src} alt={cpuCaptain.display} width={120} style={{ borderRadius: 8 }} /><br />
+                        <b style={{ color: "#fff" }}>{cpuCaptain.display}</b>
+                      </div>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-          <DraftLog />
-        </div>
-      ) : showGetReadyReserves ? (
-        <div>
-          <h2>Starters Draft Complete!</h2>
-          <div style={{ marginTop: 32 }}>
-            <div style={{ fontWeight: "bold", fontSize: 18, background: "#1d9c4b", color: "#fff", display: "inline-block", padding: "4px 12px", borderRadius: 3 }}>
-              Time to build your bench! Draft the Reserves and complete your All-Star squad!
-            </div>
-            <br />
-            <button style={{ marginTop: 24, fontSize: 18, padding: "10px 32px" }} onClick={beginReservesDraft}>
-              Start Reserves Draft
-            </button>
-          </div>
-          <DraftLog />
-        </div>
-      ) : reservesPhase ? (
-        <div>
-          <h2>Draft Reserves</h2>
-          <div style={{ marginBottom: 12 }}>
-            <b>
-              {currentTurn === "user"
-                ? "Your Turn: Pick a Reserve"
-                : "CPU is drafting..."}
-            </b>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "18px",
-              justifyContent: "center",
-              marginBottom: 18,
-            }}
-          >
-            {reservesPool.map(player => {
-              const picked =
-                userTeam.some(t => t.name === player.name) ||
-                cpuTeam.some(t => t.name === player.name);
-              return (
-                <div
-                  key={player.name}
-                  style={{
-                    width: 160,
-                    textAlign: "center",
-                    border: picked ? "2px solid #bbb" : "2px solid #aaa",
-                    borderRadius: 10,
-                    padding: 10,
-                    background: picked ? "#f3f3f3" : "#fafafa",
-                    cursor:
-                      !picked && currentTurn === "user"
-                        ? "pointer"
-                        : "not-allowed",
-                    opacity: picked
-                      ? 0.5
-                      : currentTurn === "user"
-                      ? 1
-                      : 0.7,
-                  }}
-                  onClick={() =>
-                    !picked && currentTurn === "user"
-                      ? handleDraftReserve(player)
-                      : undefined
-                  }
-                >
-                  <img
-                    src={player.src}
-                    alt={player.name}
-                    width="120"
-                    style={{ borderRadius: 8 }}
-                  />
-                  <div style={{ marginTop: 8, fontWeight: "bold" }}>
-                    {player.name}
+                <div style={{ marginTop: 32 }}>
+                  <div style={{ fontWeight: "bold", fontSize: 18, background: "#4069c9", color: "#fff", display: "inline-block", padding: "4px 8px", borderRadius: 3 }}>
+                    Get ready to draft the Starters!
                   </div>
+                  <br />
+                  <button style={{ marginTop: 24, fontSize: 18, padding: "10px 32px" }} onClick={beginStartersDraft}>
+                    Start Starters Draft
+                  </button>
                 </div>
-              );
-            })}
-          </div>
-          <DraftLog />
-        </div>
-      ) : (
-        reservesPhase === false &&
-        !showGetReadyReserves &&
-        !startersPhase &&
-        !showGetReadyStarters &&
-        !captainPhase &&
-        gameStarted && (
-          <div>
-            <h2>Draft Complete!</h2>
-            <DraftLog />
-            <button
-              onClick={() => window.location.reload()}
-              style={{ marginTop: 24, fontSize: 18, padding: "8px 32px" }}
-            >
-              Restart Game
-            </button>
-          </div>
-        )
-      )}
+              </div>
+            ) : startersPhase ? (
+              <div>
+                <h2 style={{ color: "#fff" }}>Draft Starters</h2>
+                <div style={{ marginBottom: 12 }}>
+                  <b>
+                    {currentTurn === "user"
+                      ? "Your Turn: Pick a Starter"
+                      : "CPU is drafting..."}
+                  </b>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "18px",
+                    justifyContent: "center",
+                    marginBottom: 18,
+                  }}
+                >
+                  {startersPool.map(player => {
+                    const picked =
+                      userTeam.some(t => t.name === player.name) ||
+                      cpuTeam.some(t => t.name === player.name);
+                    return (
+                      <div
+                        key={player.name}
+                        style={{
+                          width: 160,
+                          textAlign: "center",
+                          border: picked ? "2px solid #bbb" : "2px solid #aaa",
+                          borderRadius: 10,
+                          padding: 10,
+                          background: picked ? "#f3f3f3" : "#fafafa",
+                          cursor:
+                            !picked && currentTurn === "user"
+                              ? "pointer"
+                              : "not-allowed",
+                          opacity: picked
+                            ? 0.5
+                            : currentTurn === "user"
+                            ? 1
+                            : 0.7,
+                        }}
+                        onClick={() =>
+                          !picked && currentTurn === "user"
+                            ? handleDraftStarter(player)
+                            : undefined
+                        }
+                      >
+                        <img
+                          src={player.src}
+                          alt={player.name}
+                          width="120"
+                          style={{ borderRadius: 8 }}
+                        />
+                        <div style={{ marginTop: 8, fontWeight: "bold" }}>
+                          {player.name}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <DraftLog />
+              </div>
+            ) : showGetReadyReserves ? (
+              <div>
+                <h2 style={{ color: "#fff" }}>Starters Draft Complete!</h2>
+                <div style={{ marginTop: 32 }}>
+                  <div style={{ fontWeight: "bold", fontSize: 18, background: "#1d9c4b", color: "#fff", display: "inline-block", padding: "4px 12px", borderRadius: 3 }}>
+                    Time to build your bench! Draft the Reserves and complete your All-Star squad!
+                  </div>
+                  <br />
+                  <button style={{ marginTop: 24, fontSize: 18, padding: "10px 32px" }} onClick={beginReservesDraft}>
+                    Start Reserves Draft
+                  </button>
+                </div>
+                <DraftLog />
+              </div>
+            ) : reservesPhase ? (
+              <div>
+                <h2 style={{ color: "#fff" }}>Draft Reserves</h2>
+                <div style={{ marginBottom: 12 }}>
+                  <b>
+                    {currentTurn === "user"
+                      ? "Your Turn: Pick a Reserve"
+                      : "CPU is drafting..."}
+                  </b>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "18px",
+                    justifyContent: "center",
+                    marginBottom: 18,
+                  }}
+                >
+                  {reservesPool.map(player => {
+                    const picked =
+                      userTeam.some(t => t.name === player.name) ||
+                      cpuTeam.some(t => t.name === player.name);
+                    return (
+                      <div
+                        key={player.name}
+                        style={{
+                          width: 160,
+                          textAlign: "center",
+                          border: picked ? "2px solid #bbb" : "2px solid #aaa",
+                          borderRadius: 10,
+                          padding: 10,
+                          background: picked ? "#f3f3f3" : "#fafafa",
+                          cursor:
+                            !picked && currentTurn === "user"
+                              ? "pointer"
+                              : "not-allowed",
+                          opacity: picked
+                            ? 0.5
+                            : currentTurn === "user"
+                            ? 1
+                            : 0.7,
+                        }}
+                        onClick={() =>
+                          !picked && currentTurn === "user"
+                            ? handleDraftReserve(player)
+                            : undefined
+                        }
+                      >
+                        <img
+                          src={player.src}
+                          alt={player.name}
+                          width="120"
+                          style={{ borderRadius: 8 }}
+                        />
+                        <div style={{ marginTop: 8, fontWeight: "bold" }}>
+                          {player.name}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <DraftLog />
+              </div>
+            ) : (
+              reservesPhase === false &&
+              !showGetReadyReserves &&
+              !startersPhase &&
+              !showGetReadyStarters &&
+              !captainPhase &&
+              gameStarted && (
+                <div>
+                  <h2 style={{ color: "#fff" }}>Draft Complete!</h2>
+                  <DraftLog />
+                  <button
+                    onClick={() => window.location.reload()}
+                    style={{ marginTop: 24, fontSize: 18, padding: "8px 32px" }}
+                  >
+                    Restart Game
+                  </button>
+                </div>
+              )
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
