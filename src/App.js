@@ -113,7 +113,6 @@ const PLAYER_STATS = {
   "Spicy P": { name: "Pascal Siakam", Overall: 87, "Inside Scoring": 88, "Outside Scoring": 86, ATH: 80, Playmaking: 72, Rebounding: 61, Defending: 78, PTS: 20.2, AST: 3.4, TRB: 6.9, STL: 0.9, BLK: 0.5, BPM: 1.7 }
 };
 
-// ---- GAME SIMULATION COMPONENT ----
 function calculateTeamRating(players, statKey, weight = 1) {
   return players.reduce((sum, p) => sum + (p[statKey] || 0) * weight, 0) / players.length;
 }
@@ -157,11 +156,12 @@ function getPlayHighlight(players, cpuPlayers, userWon) {
   ];
   return `${star.name} ${plays[getRandomIndex(plays)]}`;
 }
+
 function GameSimulation({ userTeam, cpuTeam, playersByName, onPlayAgain }) {
   const [quarterStrategy, setQuarterStrategy] = useState([
     "balanced", "balanced", "balanced", "balanced"
   ]);
-  const [quarterScores, setQuarterScores] = useState([]); // [[us, cpu], ...]
+  const [quarterScores, setQuarterScores] = useState([]);
   const [currentQuarter, setCurrentQuarter] = useState(0);
   const [gameEnded, setGameEnded] = useState(false);
   const [finalResult, setFinalResult] = useState(null);
@@ -188,7 +188,6 @@ function GameSimulation({ userTeam, cpuTeam, playersByName, onPlayAgain }) {
   const defenseB = 0.7 * calculateTeamRating(startersB, "Defending") +
     0.3 * calculateTeamRating(benchB, "Defending");
 
-  // Cumulative scores per team
   const cumulative = quarterScores.reduce(
     (acc, q) => {
       acc[0].push((acc[0][acc[0].length - 1] || 0) + q[0]);
@@ -213,7 +212,6 @@ function GameSimulation({ userTeam, cpuTeam, playersByName, onPlayAgain }) {
     const qa = simulateQuarter(offenseA, defenseB, stratA);
     const qb = simulateQuarter(offenseB, defenseA, stratB);
 
-    // Rolling animation
     setShowRolling(true);
     let c = 0, steps = 20, interval;
     interval = setInterval(() => {
@@ -386,10 +384,7 @@ function GameSimulation({ userTeam, cpuTeam, playersByName, onPlayAgain }) {
               onClick={() => {
                 onPlayAgain();
                 const audio = document.getElementById("nba-music");
-                if (audio) {
-                  audio.currentTime = 0;
-                  audio.play();
-                }
+                if (audio) audio.play();
               }}
             >
               Play the Game Again
@@ -401,7 +396,6 @@ function GameSimulation({ userTeam, cpuTeam, playersByName, onPlayAgain }) {
   );
 }
 
-// ---- MAIN APP ----
 function App() {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const audioRef = useRef(null);
@@ -426,7 +420,6 @@ function App() {
     setMusicPlaying(true);
     setStep("selectCaptain");
     if (audioRef.current) {
-      audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
     }
   };
@@ -495,7 +488,6 @@ function App() {
     setGameReady(initialGameReady);
     setMusicPlaying(true);
     if (audioRef.current) {
-      audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
     }
   };
